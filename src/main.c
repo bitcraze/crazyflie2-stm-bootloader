@@ -1,4 +1,5 @@
 #include <stm32f4xx.h>
+#include "uart.h"
 
 void delayMs(int ms) {
   while (ms--) {
@@ -8,9 +9,11 @@ void delayMs(int ms) {
 
 int main()
 {
-  GPIO_InitTypeDef gpioInit;
+  GPIO_InitTypeDef gpioInit = {0};
 
   SystemInit();
+  uartInit();
+  
 
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
   
@@ -23,9 +26,11 @@ int main()
   
   while(1) {
     GPIO_WriteBit(GPIOD, GPIO_Pin_2, 1);
-    delayMs(500);
+    while(!uartIsRxReady());
+    uartGetc();
     GPIO_WriteBit(GPIOD, GPIO_Pin_2, 0);
-    delayMs(500);
+    while(!uartIsRxReady());
+    uartGetc();
   }
   
   return 0;
