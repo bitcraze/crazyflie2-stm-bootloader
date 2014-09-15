@@ -39,33 +39,48 @@ void USART6_IRQHandler()
 
 void uartInit()
 {
-  USART_InitTypeDef uartInit = {0};
+  USART_InitTypeDef usartInit = {0};
   GPIO_InitTypeDef gpioInit = {0};
+  NVIC_InitTypeDef nvicInit = {0};
   
-  //Uart GPIOs
+  //Enable clocks
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
-  gpioInit.GPIO_Pin = GPIO_Pin_6;
-  gpioInit.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_Init(GPIOC, &gpioInit);
-  gpioInit.GPIO_Pin = GPIO_Pin_7;
-  GPIO_Init(GPIOC, &gpioInit);
-
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
-  uartInit.USART_BaudRate = 1000000;
-  uartInit.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-  USART_Init(USART6, &uartInit);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+
+  //Uart GPIOs
+  gpioInit.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+  gpioInit.GPIO_Mode = GPIO_Mode_AF;
+  gpioInit.GPIO_OType = GPIO_OType_PP;
+  gpioInit.GPIO_Speed = GPIO_Speed_25MHz;
+  gpioInit.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOC, &gpioInit);
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_USART6);
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_USART6);
+
+  usartInit.USART_BaudRate = 1000000;
+  usartInit.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+  usartInit.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+  usartInit.USART_Parity = USART_Parity_No;
+  usartInit.USART_WordLength = USART_WordLength_8b;
+  usartInit.USART_StopBits = USART_StopBits_1;
+  USART_Init(USART6, &usartInit);
 
   // Enable interrupt
   USART_ITConfig(USART6, USART_IT_TC, ENABLE);
   USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);
-  NVIC_EnableIRQ(USART6_IRQn);
+  nvicInit.NVIC_IRQChannel = USART6_IRQn;
+  nvicInit.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&nvicInit);
+  //NVIC_EnableIRQ(USART6_IRQn);
 
   //Enable flow control GPIO
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
   gpioInit.GPIO_Pin = GPIO_Pin_4;
   gpioInit.GPIO_Mode = GPIO_Mode_IN;
   gpioInit.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_Init(GPIOA, &gpioInit);
+
+  USART_Cmd(USART6, ENABLE);
 }
 
 bool uartIsRxReady()
