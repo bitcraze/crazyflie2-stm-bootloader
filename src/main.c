@@ -24,13 +24,15 @@ int main()
   SysTick->LOAD = (SystemCoreClock/8)/1000; // Set systick to overflow every 1ms
   SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
   
+  GPIO_WriteBit(GPIOD, GPIO_Pin_2, 0);
+
   while(1) {
+    while(!uartIsRxReady());
+    while (uartIsRxReady()) uartGetc();
     GPIO_WriteBit(GPIOD, GPIO_Pin_2, 1);
-    while(!uartIsRxReady());
-    uartGetc();
+    delayMs(100);
     GPIO_WriteBit(GPIOD, GPIO_Pin_2, 0);
-    while(!uartIsRxReady());
-    uartGetc();
+    delayMs(50);
   }
   
   return 0;

@@ -27,11 +27,12 @@ void USART6_IRQHandler()
       txqTail = (txqTail+1)%TXQ_LEN;
     }
   }
-  while (USART_GetFlagStatus(USART6, USART_FLAG_RXNE)) {
+  if (USART_GetFlagStatus(USART6, USART_FLAG_RXNE)) {
     if (((rxqHead+1)%RXQ_LEN)!=rxqTail) {
       rxq[rxqHead] = USART_ReceiveData(USART6);
       rxqHead = (rxqHead+1)%RXQ_LEN;
     } else {
+      USART_ReceiveData(USART6); //Drop data
       dropped++;
     }
   }
