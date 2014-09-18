@@ -8,5 +8,6 @@ bool uartIsRxReady();
 char uartGetc();
 bool uartIsTxReady();
 void uartPutc(char data);
+void uartPuts(char *string);
 
 #endif

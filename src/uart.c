@@ -109,5 +109,19 @@ void uartPutc(char data)
   if (uartIsTxReady()) {
     txq[txqHead] = data;
     txqHead = ((txqHead+1)%TXQ_LEN);
+
+    if (USART_GetFlagStatus(USART6, USART_FLAG_TXE)) {
+      USART_SendData(USART6, txq[txqTail]);
+      txqTail = (txqTail+1)%TXQ_LEN;
+    }
+  } else {
+	  dropped++;
+  }
+}
+
+void uartPuts(char *string)
+{
+  while (*string) {
+    uartPutc(*string++);
   }
 }

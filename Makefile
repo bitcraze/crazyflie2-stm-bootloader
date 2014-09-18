@@ -43,7 +43,7 @@ CRT0 = startup_stm32f40xx.o system_stm32f4xx.o
 
 # Should maybe be in separate file?
 #-include scripts/st_f405_obj.mk
-ST_OBJ += stm32f4xx_rcc.o stm32f4xx_gpio.o stm32f4xx_usart.o stm32f4xx_misc.o
+ST_OBJ += stm32f4xx_rcc.o stm32f4xx_gpio.o stm32f4xx_usart.o stm32f4xx_misc.o stm32f4xx_flash.o
 # ST_OBJ += cpal_hal.o cpal_i2c.o cpal_usercallback_template.o cpal_i2c_hal_stm32f4xx.o
 
 # Crazyflie
