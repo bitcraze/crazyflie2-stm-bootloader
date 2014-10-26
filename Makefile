@@ -52,7 +52,7 @@ VPATH += src
 
 ############### Source files configuration ################
 
-PROJ_OBJ = main.o uart.o syslink.o
+PROJ_OBJ = main.o uart.o syslink.o bootpin.o
 
 
 OBJ = $(CRT0) $(ST_OBJ) $(PROJ_OBJ)

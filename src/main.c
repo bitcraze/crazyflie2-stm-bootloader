@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <stm32f4xx.h>
+#include "bootpin.h"
 #include "uart.h"
 #include "syslink.h"
 #include "crtp.h"
@@ -32,6 +33,29 @@ int main()
   int ledGreenTime=0;
   int ledRedTime = 0;
 
+  /* Detecting if we need to boot firmware or DFU bootloader */
+  bootpinInit();
+  if (bootpinStartFirmware() == true) {
+    if (*((uint32_t*)FIRMWARE_START) != 0xFFFFFFFFU) {
+      void (*firmware)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(FIRMWARE_START+4));
+      bootpinDeinit();
+      // Start firmware
+      NVIC_SetVectorTable(FIRMWARE_START, 0);
+      __set_MSP(*((uint32_t*)FIRMWARE_START));
+      firmware();
+    }
+  } else if (bootpinNrfReset() == true) {
+    void (*bootloader)(void) __attribute__((noreturn)) = (void *)(*(uint32_t*)(SYSTEM_BASE+4));
+    bootpinDeinit();
+    // Start bootloader
+    NVIC_SetVectorTable(SYSTEM_BASE, 0);
+    __set_MSP(*((uint32_t*)SYSTEM_BASE));
+    bootloader();
+
+  }
+  bootpinDeinit();
+
+  /* Booting CRTP Bootloader! */
   SystemInit();
   uartInit();
   
@@ -58,33 +82,33 @@ int main()
   GPIO_WriteBit(GPIOD, GPIO_Pin_2, 1);
 
   while(1) {
-	if (syslinkReceive(&slPacket)) {
-      if (slPacket.type == SYSLINK_RADIO_RAW) {
-    	  memcpy(packet.raw, slPacket.data, slPacket.length);
-    	  packet.datalen = slPacket.length-1;
+    if (syslinkReceive(&slPacket)) {
+        if (slPacket.type == SYSLINK_RADIO_RAW) {
+          memcpy(packet.raw, slPacket.data, slPacket.length);
+          packet.datalen = slPacket.length-1;
 
-    	  ledGreenTime = tick;
-    	  GPIO_WriteBit(GPIOC, GPIO_Pin_1, 0);
+          ledGreenTime = tick;
+          GPIO_WriteBit(GPIOC, GPIO_Pin_1, 0);
 
-    	  if (bootloaderProcess(&packet)) {
-    	    ledRedTime = tick;
-    	    GPIO_WriteBit(GPIOC, GPIO_Pin_0, 0);
+          if (bootloaderProcess(&packet)) {
+            ledRedTime = tick;
+            GPIO_WriteBit(GPIOC, GPIO_Pin_0, 0);
 
-    	    memcpy(slPacket.data, packet.raw, packet.datalen+1);
-    	    slPacket.length = packet.datalen+1;
-    	    syslinkSend(&slPacket);
-    	  }
-      }
+            memcpy(slPacket.data, packet.raw, packet.datalen+1);
+            slPacket.length = packet.datalen+1;
+            syslinkSend(&slPacket);
+          }
+        }
 
-      if (ledGreenTime!=0 && tick-ledGreenTime>10) {
-        GPIO_WriteBit(GPIOC, GPIO_Pin_1, 1);
-        ledGreenTime = 0;
-      }
-      if (ledRedTime!=0 && tick-ledRedTime>10) {
-        GPIO_WriteBit(GPIOC, GPIO_Pin_0, 1);
-        ledRedTime = 0;
-      }
-	}
+        if (ledGreenTime!=0 && tick-ledGreenTime>10) {
+          GPIO_WriteBit(GPIOC, GPIO_Pin_1, 1);
+          ledGreenTime = 0;
+        }
+        if (ledRedTime!=0 && tick-ledRedTime>10) {
+          GPIO_WriteBit(GPIOC, GPIO_Pin_0, 1);
+          ledRedTime = 0;
+        }
+    }
   }
   return 0;
 }
@@ -163,8 +187,8 @@ static bool bootloaderProcess(CrtpPacket *pk)
     else if (pk->data[1] == CMD_READ_FLASH)
     {
       int i=0;
-      ReadFlashParameters_t *params = (ReadFlashParameters_t *)&pk->data[2];
       char *data = (char*) &pk->data[2+sizeof(ReadFlashParameters_t)];
+      ReadFlashParameters_t *params = (ReadFlashParameters_t *)&pk->data[2];
       char *flash= (char*)FLASH_BASE;
 
       //Return the data required

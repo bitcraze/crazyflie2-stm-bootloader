@@ -38,6 +38,10 @@
 #define FLASH_BASE 0x08000000
 #endif
 
+#define FIRMWARE_START (FLASH_BASE+(FLASH_START*PAGE_SIZE))
+
+#define SYSTEM_BASE 0x1FFF0000
+
 #define RADIO_CHANEL 110
 
 #endif /* __CONFIG_H__ */
