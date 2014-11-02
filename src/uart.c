@@ -21,6 +21,7 @@ static int txqHead;
 #endif
 
 static unsigned int dropped;
+static volatile int devnull;
 
 void USART6_IRQHandler()
 {
@@ -38,7 +39,7 @@ void USART6_IRQHandler()
       rxq[rxqHead] = USART_ReceiveData(USART6);
       rxqHead = (rxqHead+1)%RXQ_LEN;
     } else {
-      USART_ReceiveData(USART6); //Drop data
+      devnull = USART_ReceiveData(USART6); //Drop data
       dropped++;
     }
   }

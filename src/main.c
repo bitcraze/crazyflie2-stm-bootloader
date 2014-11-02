@@ -10,7 +10,7 @@
 #include "loaderCommands.h"
 #include "config.h"
 
-static uint32_t tick;
+static volatile uint32_t tick;
 
 static bool bootloaderProcess(CrtpPacket *packet);
 
@@ -30,8 +30,10 @@ int main()
   GPIO_InitTypeDef gpioInit = {0};
   struct syslinkPacket slPacket;
   struct crtpPacket_s packet;
-  int ledGreenTime=0;
-  int ledRedTime = 0;
+  unsigned int ledGreenTime=0;
+  unsigned int ledRedTime = 0;
+  unsigned int ledBlueTime = 0;
+
 
   /* Detecting if we need to boot firmware or DFU bootloader */
   bootpinInit();
@@ -83,31 +85,40 @@ int main()
 
   while(1) {
     if (syslinkReceive(&slPacket)) {
-        if (slPacket.type == SYSLINK_RADIO_RAW) {
-          memcpy(packet.raw, slPacket.data, slPacket.length);
-          packet.datalen = slPacket.length-1;
+      if (slPacket.type == SYSLINK_RADIO_RAW) {
+        memcpy(packet.raw, slPacket.data, slPacket.length);
+        packet.datalen = slPacket.length-1;
 
-          ledGreenTime = tick;
-          GPIO_WriteBit(GPIOC, GPIO_Pin_1, 0);
+        ledGreenTime = tick;
+        GPIO_WriteBit(GPIOC, GPIO_Pin_1, 0);
 
-          if (bootloaderProcess(&packet)) {
-            ledRedTime = tick;
-            GPIO_WriteBit(GPIOC, GPIO_Pin_0, 0);
+        if (bootloaderProcess(&packet)) {
+          ledRedTime = tick;
+          GPIO_WriteBit(GPIOC, GPIO_Pin_0, 0);
 
-            memcpy(slPacket.data, packet.raw, packet.datalen+1);
-            slPacket.length = packet.datalen+1;
-            syslinkSend(&slPacket);
-          }
+          memcpy(slPacket.data, packet.raw, packet.datalen+1);
+          slPacket.length = packet.datalen+1;
+          syslinkSend(&slPacket);
         }
+      }
+    }
 
-        if (ledGreenTime!=0 && tick-ledGreenTime>10) {
-          GPIO_WriteBit(GPIOC, GPIO_Pin_1, 1);
-          ledGreenTime = 0;
-        }
-        if (ledRedTime!=0 && tick-ledRedTime>10) {
-          GPIO_WriteBit(GPIOC, GPIO_Pin_0, 1);
-          ledRedTime = 0;
-        }
+    if (ledGreenTime!=0 && tick-ledGreenTime>10) {
+      GPIO_WriteBit(GPIOC, GPIO_Pin_1, 1);
+      ledGreenTime = 0;
+    }
+    if (ledRedTime!=0 && tick-ledRedTime>10) {
+      GPIO_WriteBit(GPIOC, GPIO_Pin_0, 1);
+      ledRedTime = 0;
+    }
+
+    if ((tick-ledBlueTime)>500) {
+      if (GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_2)) {
+        GPIO_WriteBit(GPIOD, GPIO_Pin_2, 0);
+      } else {
+        GPIO_WriteBit(GPIOD, GPIO_Pin_2, 1);
+      }
+      ledBlueTime = tick;
     }
   }
   return 0;
@@ -213,11 +224,6 @@ static bool bootloaderProcess(CrtpPacket *pk)
       WriteFlashParameters_t *params = (WriteFlashParameters_t *)&pk->data[2];
       WriteFlashReturns_t *returns = (WriteFlashReturns_t *)&pk->data[2];
 
-      returns->done = 1;
-      returns->error = 0;
-      pk->datalen = 2+sizeof(WriteFlashReturns_t);
-      return true;
-
       //Test if it is an acceptable write request
       if ( (params->flashPage<FLASH_START) || (params->flashPage>=FLASH_PAGES) ||
           ((params->flashPage+params->nPages)>FLASH_PAGES) || (params->bufferPage>=BUFFER_PAGES)
@@ -232,11 +238,16 @@ static bool bootloaderProcess(CrtpPacket *pk)
       // Else, if everything is OK, flash the page(s)
       else
       {
+        FLASH_Unlock();
+        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |FLASH_FLAG_WRPERR |
+               FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
+
+        __disable_irq();
         //Erase the page(s)
         for(i=0; i<params->nPages; i++)
         {
           for (j=0; j<12; j++) {
-            if ((params->nPages*PAGE_SIZE)==sector_address[j]) {
+            if ((uint32_t)(FLASH_BASE + ((uint32_t)params->flashPage*PAGE_SIZE) + (i*PAGE_SIZE)) == sector_address[j]) {
               if ( FLASH_EraseSector(j<<3, VoltageRange_3) != FLASH_COMPLETE)
               {
                 error = 2;
@@ -248,7 +259,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
 
         //Write the data, long per long
         flashAddress = FLASH_BASE + (params->flashPage*PAGE_SIZE);
-        bufferToFlash = (uint32_t *) (&buffer + (params->bufferPage*PAGE_SIZE));
+        bufferToFlash = (uint32_t *) (&buffer[0] + (params->bufferPage*PAGE_SIZE));
         for (i=0; i<((params->nPages*PAGE_SIZE)/sizeof(uint32_t)); i++, flashAddress+=4)
         {
           if(FLASH_ProgramWord(flashAddress, bufferToFlash[i]) != FLASH_COMPLETE)
@@ -262,11 +273,16 @@ static bool bootloaderProcess(CrtpPacket *pk)
         returns->done = 1;
         returns->error = 0;
         pk->datalen = 2+sizeof(WriteFlashReturns_t);
+        FLASH_Lock();
+        __enable_irq();
         return true;
 
         goto finally;
 
         failure:
+        FLASH_Lock();
+        __enable_irq();
+
         //If the write procedure failed, send the error packet
         //TODO: see if it is necessary or wanted to send the reason as well
         returns->done = 0;
@@ -275,7 +291,8 @@ static bool bootloaderProcess(CrtpPacket *pk)
         return true;
 
         finally:
-        ;//None...
+        FLASH_Lock();
+        __enable_irq();
       }
     }
   }
