@@ -1,8 +1,8 @@
 /* Pin scheme used by the NRF to direct bootloader boot:
  * State           | NRF_TX | NRF_FC |
  * ----------------+--------+--------+
- * Boot Firmware   |  HIGH  |  HIGH  |
- * Boot Bootloader |  HIGH  |  LOW   |
+ * Boot Firmware   |  HIGH  |  LOW   |
+ * Boot Bootloader |  HIGH  |  HIGH  |
  * Error, boot DFU |  HZ    |  HZ    |
  *
  * NRF_TX and NRF_FC are configured with pull-down resistors
@@ -40,14 +40,14 @@ void bootpinDeinit(void)
 
 bool bootpinStartFirmware(void)
 {
-  return GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_4) == Bit_SET &&
+  return GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_4) == Bit_RESET &&
          GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_7) == Bit_SET;
 }
 
 bool bootpinStartBootloader(void)
 {
   return GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_4) == Bit_SET &&
-         GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_7) == Bit_RESET;
+         GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_7) == Bit_SET;
 }
 
 bool bootpinNrfReset(void)

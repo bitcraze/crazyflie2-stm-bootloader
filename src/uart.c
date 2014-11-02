@@ -5,6 +5,8 @@
 #include <stm32f4xx.h>
 #include "uart.h"
 
+#define POLLING_TX
+
 #define TXQ_LEN 64
 #define RXQ_LEN 64
 
@@ -12,14 +14,17 @@ static char rxq[RXQ_LEN];
 static int rxqTail;
 static int rxqHead;
 
+#ifndef POLLING_TX
 static char txq[TXQ_LEN];
 static int txqTail;
 static int txqHead;
+#endif
 
 static unsigned int dropped;
 
 void USART6_IRQHandler()
 {
+#ifndef POLLING_TX
   if (USART_GetFlagStatus(USART6, USART_FLAG_TC)) {
     USART_ClearFlag(USART6, USART_FLAG_TC);
     if (txqHead != txqTail) {
@@ -27,6 +32,7 @@ void USART6_IRQHandler()
       txqTail = (txqTail+1)%TXQ_LEN;
     }
   }
+#endif
   if (USART_GetFlagStatus(USART6, USART_FLAG_RXNE)) {
     if (((rxqHead+1)%RXQ_LEN)!=rxqTail) {
       rxq[rxqHead] = USART_ReceiveData(USART6);
@@ -68,7 +74,9 @@ void uartInit()
   USART_Init(USART6, &usartInit);
 
   // Enable interrupt
+#ifndef POLLING_TX
   USART_ITConfig(USART6, USART_IT_TC, ENABLE);
+#endif
   USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);
   nvicInit.NVIC_IRQChannel = USART6_IRQn;
   nvicInit.NVIC_IRQChannelCmd = ENABLE;
@@ -78,7 +86,7 @@ void uartInit()
   //Enable flow control GPIO
   gpioInit.GPIO_Pin = GPIO_Pin_4;
   gpioInit.GPIO_Mode = GPIO_Mode_IN;
-  gpioInit.GPIO_PuPd = GPIO_PuPd_UP;
+  gpioInit.GPIO_PuPd = GPIO_PuPd_DOWN;
   GPIO_Init(GPIOA, &gpioInit);
 
   USART_Cmd(USART6, ENABLE);
@@ -101,11 +109,20 @@ char uartGetc()
 
 bool uartIsTxReady()
 {
+#ifdef POLLING_TX
+  return true;
+#else
   return ((txqHead+1)%TXQ_LEN) != txqTail;
+#endif
 }
 
 void uartPutc(char data)
 {
+#ifdef POLLING_TX
+  while (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_4) == Bit_SET);
+  USART_SendData(USART6, data);
+  while(USART_GetFlagStatus(USART6, USART_FLAG_TC) == RESET);
+#else
   if (uartIsTxReady()) {
     txq[txqHead] = data;
     txqHead = ((txqHead+1)%TXQ_LEN);
@@ -117,6 +134,7 @@ void uartPutc(char data)
   } else {
 	  dropped++;
   }
+#endif
 }
 
 void uartPuts(char *string)
