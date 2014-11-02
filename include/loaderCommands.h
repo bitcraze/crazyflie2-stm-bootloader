@@ -29,7 +29,7 @@
 /* XXX: Protocol version has to be increased each time a command is
  * added or modified!
  */
-#define PROTOCOL_VERSION 0
+#define PROTOCOL_VERSION 0x10
 
 #define CPUID_LEN 12
 
