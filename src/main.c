@@ -159,6 +159,17 @@ static bool bootloaderProcess(CrtpPacket *pk)
       pk->datalen = 2+sizeof(GetInfoReturns_t);
 
       return true;
+    }
+    else if (pk->data[1] == CMD_GET_MAPPING)
+    {
+      const uint8_t mapping[] = {4, 16, 1, 64, 7, 128};
+      GetMappingReturns_t * returns = (GetMappingReturns_t *)&pk->data[2];
+
+      memcpy(returns->mapping, mapping, sizeof(mapping));
+
+      pk->datalen = 2+sizeof(mapping);
+
+      return true;
     }/*
     else if (pk->data[1] == CMD_SET_ADDRESS)
     {

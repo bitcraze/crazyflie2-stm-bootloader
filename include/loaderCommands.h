@@ -54,6 +54,14 @@ typedef struct {
 } __attribute__((__packed__)) SetAddressParameters_t;
 //Returns ... void
 
+/******* GetInfo ******/
+#define CMD_GET_MAPPING 0x12
+//Parameters ... void
+//Returns:
+typedef struct {
+  char mapping[6];
+} __attribute__((__packed__)) GetMappingReturns_t;
+
 /****** LoadBuffer ****/
 #define CMD_LOAD_BUFFER 0x14
 //Parameters:
