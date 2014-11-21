@@ -151,7 +151,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
 
       info->pageSize = PAGE_SIZE;
       info->nBuffPages = BUFFER_PAGES;
-      info->nFlashPages = FLASH_PAGES;
+      info->nFlashPages = flashPages;
       info->flashStart = FLASH_START;
       //memcpy(info->cpuId, cpuidGetId(), CPUID_LEN);
       info->version = PROTOCOL_VERSION;
@@ -214,7 +214,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
       char *flash= (char*)FLASH_BASE;
 
       //Return the data required
-      for(i=0; i<25 && (i+(params->page*PAGE_SIZE)+params->address)<(FLASH_PAGES*PAGE_SIZE); i++)
+      for(i=0; i<25 && (i+(params->page*PAGE_SIZE)+params->address)<(flashPages*PAGE_SIZE); i++)
       {
         //data[i] = flash[(i+(params->page*PAGE_SIZE)+params->address)];
         //data[i] = *((char*)(FLASH_BASE+i+(params->page*PAGE_SIZE)+params->address));
@@ -236,8 +236,8 @@ static bool bootloaderProcess(CrtpPacket *pk)
       WriteFlashReturns_t *returns = (WriteFlashReturns_t *)&pk->data[2];
 
       //Test if it is an acceptable write request
-      if ( (params->flashPage<FLASH_START) || (params->flashPage>=FLASH_PAGES) ||
-          ((params->flashPage+params->nPages)>FLASH_PAGES) || (params->bufferPage>=BUFFER_PAGES)
+      if ( (params->flashPage<FLASH_START) || (params->flashPage>=flashPages) ||
+          ((params->flashPage+params->nPages)>flashPages) || (params->bufferPage>=BUFFER_PAGES)
       )
       {
         //Return a failure answer

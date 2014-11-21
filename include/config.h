@@ -29,7 +29,7 @@
 
 //TODO: Most of that shall be possible to get automatically ...
 #define BUFFER_PAGES 10
-#define FLASH_PAGES  1024
+#define flashPages  1024
 #define FLASH_START  16
 
 #define PAGE_SIZE 1024
