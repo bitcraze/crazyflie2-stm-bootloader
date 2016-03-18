@@ -10,6 +10,7 @@
 OPENOCD           ?= openocd
 OPENOCD_INTERFACE ?= interface/stlink-v2.cfg
 OPENOCD_TARGET    ?= target/stm32f4x_stlink.cfg
+OPENOCD_CMDS      ?=
 CROSS_COMPILE     ?= arm-none-eabi-
 PYTHON2           ?= python
 CLOAD             ?= 0
@@ -166,18 +167,18 @@ endif
 
 #Flash the stm.
 flash:
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
                  -c "flash write_image erase $(PROG).elf" -c "verify_image $(PROG).elf" -c "reset run" -c shutdown
 
 #STM utility targets
 halt:
-	$(OPENOCD) -d0 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c "halt" -c shutdown
+	$(OPENOCD) -d0 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "halt" -c shutdown
 
 reset:
-	$(OPENOCD) -d0 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c "reset" -c shutdown
+	$(OPENOCD) -d0 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset" -c shutdown
 
 openocd:
-	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets
+	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets
 
 #Print preprocessor #defines
 prep:
