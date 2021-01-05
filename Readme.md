@@ -1,3 +1,3 @@
-# Crazyflie 2 STM Bootloader [![Build Status](https://travis-ci.org/bitcraze/crazyflie2-stm-bootloader.svg)](https://travis-ci.org/bitcraze/crazyflie2-stm-bootloader)
+# Crazyflie 2 STM Bootloader [![CI](https://github.com/bitcraze/crazyflie2-stm-bootloader/workflows/CI/badge.svg)](https://github.com/bitcraze/crazyflie2-stm-bootloader/actions?query=workflow%3ACI)
 
 Bootloader for the Crazyflie 2
