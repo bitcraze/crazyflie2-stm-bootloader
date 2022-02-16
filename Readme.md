@@ -235,3 +235,12 @@ Turn the STM32 on. No result will be sent.
 |  0-3   | vbat | floating point value containing the current battery voltage in volts |
 
 Check battery status (works even if the STM32 is turned off). 
+
+## Contribute
+Go to the [contribute page](https://www.bitcraze.io/contribute/) on our website to learn more.
+
+### Test code for contribution
+Run the automated build locally to test your code
+
+	./tools/build/build
+
