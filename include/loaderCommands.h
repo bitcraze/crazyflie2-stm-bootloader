@@ -26,10 +26,12 @@
 #ifndef __LOADER_COMMANDS_H__
 #define __LOADER_COMMANDS_H__
 
+#include <stdint.h>
+
 /* XXX: Protocol version has to be increased each time a command is
  * added or modified!
  */
-#define PROTOCOL_VERSION 0x10
+#define PROTOCOL_VERSION 0x11
 
 #define CPUID_LEN 12
 
@@ -102,7 +104,7 @@ typedef struct {
   unsigned char error;
 } __attribute__((__packed__)) FlashStatusReturns_t;
 
-/****** ReadBuffer ****/
+/****** ReadFlash ****/
 #define CMD_READ_FLASH 0x1C
 //Parameters:
 typedef struct {
@@ -111,6 +113,31 @@ typedef struct {
 } __attribute__((__packed__)) ReadFlashParameters_t;
 //Returns ... Same as parameters but with data
 
+/****** PageCrc ******/
+#define CMD_PAGE_CRC 0x20
+//Parameters:
+typedef struct {
+  unsigned short page;
+} __attribute__((__packed__)) PageCrcParameters_t;
+//Returns:
+typedef struct {
+  unsigned short page;
+  uint32_t crc32;
+} __attribute__((__packed__)) PageCrcReturns_t;
 
+/****** RangeCrc ******/
+#define CMD_RANGE_CRC 0x22
+//Parameters: byte range counted from the start of the flash
+typedef struct {
+  uint32_t address;
+  uint32_t length;
+} __attribute__((__packed__)) RangeCrcParameters_t;
+//Returns: error 0 = OK, 1 = range outside of the flash
+typedef struct {
+  uint32_t address;
+  uint32_t length;
+  uint32_t crc32;
+  uint8_t error;
+} __attribute__((__packed__)) RangeCrcReturns_t;
 
 #endif /* __LOADER_COMMANDS_H__ */

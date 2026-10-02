@@ -9,6 +9,7 @@
 #include "crtp.h"
 #include "loaderCommands.h"
 #include "config.h"
+#include "crc32.h"
 
 static volatile uint32_t tick;
 
@@ -223,6 +224,37 @@ static bool bootloaderProcess(CrtpPacket *pk)
 
       pk->datalen += i;
 
+      return true;
+    }
+    else if (pk->data[1] == CMD_PAGE_CRC)
+    {
+      PageCrcParameters_t *params = (PageCrcParameters_t *)&pk->data[2];
+      PageCrcReturns_t *returns = (PageCrcReturns_t *)&pk->data[2];
+      char *flash = (char*)FLASH_BASE;
+
+      if (params->page < flashPages) {
+        returns->page = params->page;
+        returns->crc32 = crc32Calculate(&flash[params->page * PAGE_SIZE], PAGE_SIZE);
+        pk->datalen = 2 + sizeof(PageCrcReturns_t);
+        return true;
+      }
+    }
+    else if ((pk->data[1] == CMD_RANGE_CRC) &&
+             (pk->datalen >= 2 + sizeof(RangeCrcParameters_t)))
+    {
+      RangeCrcParameters_t *params = (RangeCrcParameters_t *)&pk->data[2];
+      RangeCrcReturns_t *returns = (RangeCrcReturns_t *)&pk->data[2];
+      uint32_t flashSize = flashPages * PAGE_SIZE;
+
+      // Address and length are left in place and echoed back
+      if ((params->length <= flashSize) && (params->address <= flashSize - params->length)) {
+        returns->crc32 = crc32Calculate((char*)FLASH_BASE + params->address, params->length);
+        returns->error = 0;
+      } else {
+        returns->crc32 = 0;
+        returns->error = 1;
+      }
+      pk->datalen = 2 + sizeof(RangeCrcReturns_t);
       return true;
     }
     else if (pk->data[1] == CMD_WRITE_FLASH)
