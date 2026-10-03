@@ -56,7 +56,7 @@ All packets sent to the bootloader starts with “0xFF Target_number”, this ki
 
 The high nibble of the version aims at describing the board if board-specific change is required to the protocol (ie. GET_MAPPING that is specific to stm32f405).
 
-Version 0x11 adds PAGE_CRC and RANGE_CRC on both targets, and SET_ADDRESS and SET_BROADCAST_ADDRESS on target 0xFE. Together they allow flashing several Crazyflies at once, see [Flashing several Crazyflies at once](#flashing-several-crazyflies-at-once).
+Version 0x11 adds PAGE_CRC and RANGE_CRC on both targets, and SET_ADDRESS, SET_BROADCAST_ADDRESS and SET_CHANNEL on target 0xFE. Together they allow flashing several Crazyflies at once, see [Flashing several Crazyflies at once](#flashing-several-crazyflies-at-once).
 
 All packets have the following format:
 
@@ -84,6 +84,7 @@ In the rest of this page commands and data are described.
 | 0x20  | PAGE_CRC  | Only implemented from version 0x11 |
 | 0x21  | SET_BROADCAST_ADDRESS  | Only implemented from version 0x11 on target 0xFE |
 | 0x22  | RANGE_CRC  | Only implemented from version 0x11 |
+| 0x23  | SET_CHANNEL  | Only implemented from version 0x11 on target 0xFE |
 | 0xFF  | RESET_INIT  | Only implemented in version 0x10 target 0xFE |
 | 0xF0  | RESET | Only implemented in version 0x10 target 0xFE |
 | 0x01  | ALLOFF | Only implemented in version 0x10 target 0xFE |
@@ -273,6 +274,17 @@ Target 0xFE only. Makes the nRF51 bootloader also listen on a broadcast address,
 
 Returns the CRC32 of any byte range of the flash, so a whole firmware image can be verified with one request. The address is counted from the start of the flash, so address 0 is 0x08000000 on the STM32F405 and 0x00000000 on the nRF51. All fields are little endian and the CRC32 is the same as for PAGE_CRC. Checksumming the whole flash takes about 0.3 s on the STM32F405 and 0.4 s on the nRF51.
 
+#### SET_CHANNEL
+
+| Byte | Request fields | Content |
+| ---- | -------------- | -------  |
+|  0   | SET_CHANNEL    | 0x23 |
+|  1   | channel        | Radio channel, 0 to 125 |
+
+Target 0xFE only. Moves the nRF51 bootloader to another radio channel. The command is acknowledged on the current channel and not answered, the bootloader changes channel at the start of its next radio timeslot, a few milliseconds later. Check that it answers on the new channel, for example with GET_INFO. The bootloader goes back to channel 0 when it is restarted.
+
+This lets several radios, each on its own channel, talk to different Crazyflies at the same time.
+
 ####  RESET_INIT
 
 Prepare to reset (no additional data fields). The result will be the original request.
@@ -321,6 +333,8 @@ With protocol version 0x11 the same image can be sent to several Crazyflies at t
 2. Send SET_BROADCAST_ADDRESS to target 0xFE of each Crazyflie, on its own address. Use the same broadcast address for all of them.
 3. Send LOAD_BUFFER and WRITE_FLASH, for either target, to the broadcast address. Nothing is answered, so instead of polling FLASH_STATUS wait for the worst case erase and programming time of the pages written before sending the next chunk.
 4. Verify each Crazyflie on its own address with RANGE_CRC over the whole image, or with PAGE_CRC to find the pages that differ, and flash those again the normal way.
+
+To speed up the steps done one Crazyflie at a time, such as the verification or writing data that differs per Crazyflie, SET_CHANNEL can spread the Crazyflies over several channels, each served by its own radio.
 
 ## Contribute
 Go to the [contribute page](https://www.bitcraze.io/contribute/) on our website to learn more.
