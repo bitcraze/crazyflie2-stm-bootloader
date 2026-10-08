@@ -119,10 +119,11 @@ typedef struct {
 typedef struct {
   unsigned short page;
 } __attribute__((__packed__)) PageCrcParameters_t;
-//Returns:
+//Returns: error 0 = OK, 1 = page outside of the flash
 typedef struct {
   unsigned short page;
   uint32_t crc32;
+  uint8_t error;
 } __attribute__((__packed__)) PageCrcReturns_t;
 
 /****** RangeCrc ******/

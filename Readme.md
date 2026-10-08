@@ -237,9 +237,10 @@ This message aims at checking the latest flash operation in case where the WRITE
 | ---- | -------------- | -------  |
 |  0   | PAGE_CRC       | 0x20 |
 |  1-2  | page | Flash page |
-|  3-6  | crc32 | CRC32 of the page |
+|  3-6  | crc32 | CRC32 of the page, 0 on error |
+|  7  | error | 0 if no error, 1 if the page is outside of the flash |
 
-Returns the CRC32 of one flash page (pageSize bytes, see GET_INFO), so a page can be verified without reading it back. Pages outside of the flash are not answered.
+Returns the CRC32 of one flash page (pageSize bytes, see GET_INFO), so a page can be verified without reading it back.
 
 The CRC32 is the standard one used by zlib and Ethernet: reflected polynomial 0xEDB88320, initial value 0xFFFFFFFF and final XOR 0xFFFFFFFF.
 

@@ -226,18 +226,23 @@ static bool bootloaderProcess(CrtpPacket *pk)
 
       return true;
     }
-    else if (pk->data[1] == CMD_PAGE_CRC)
+    else if ((pk->data[1] == CMD_PAGE_CRC) &&
+             (pk->datalen >= 2 + sizeof(PageCrcParameters_t)))
     {
       PageCrcParameters_t *params = (PageCrcParameters_t *)&pk->data[2];
       PageCrcReturns_t *returns = (PageCrcReturns_t *)&pk->data[2];
       char *flash = (char*)FLASH_BASE;
 
+      // The page is left in place and echoed back
       if (params->page < flashPages) {
-        returns->page = params->page;
         returns->crc32 = crc32Calculate(&flash[params->page * PAGE_SIZE], PAGE_SIZE);
-        pk->datalen = 2 + sizeof(PageCrcReturns_t);
-        return true;
+        returns->error = 0;
+      } else {
+        returns->crc32 = 0;
+        returns->error = 1;
       }
+      pk->datalen = 2 + sizeof(PageCrcReturns_t);
+      return true;
     }
     else if ((pk->data[1] == CMD_RANGE_CRC) &&
              (pk->datalen >= 2 + sizeof(RangeCrcParameters_t)))
