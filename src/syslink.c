@@ -47,7 +47,13 @@ bool syslinkReceive(struct syslinkPacket *packet)
         state = (c == START_BYTE1) ? state_second_start : state_first_start;
         break;
       case state_second_start:
-        state = (c == START_BYTE2) ? state_type : state_first_start;
+        // A lone START_BYTE1 can be left over from a packet that arrived while
+        // interrupts were disabled for flashing, so let it start a new packet
+        if (c == START_BYTE2) {
+          state = state_type;
+        } else {
+          state = (c == START_BYTE1) ? state_second_start : state_first_start;
+        }
         break;
       case state_type:
         packet->type = c;
