@@ -110,7 +110,7 @@ The commands from 0x01 to 0x07 are handled by the nRF51 firmware, so they are us
 | 3-4  | nBuffPage      | Number of ram buffer page available |
 | 5-6  | nFlashPage     | Total number of flash page |
 | 7-8  | flashStart     | Start flash page of the firmware |
-| 9-20 | cpuId          | Legacy 12Bytes CPUID, shall be ignored |
+| 9-20 | cpuId          | Unique ID of the MCU. Target 0xFF: the 12 byte STM32 unique ID. Target 0xFE: the 8 byte nRF51 DEVICEID, then 4 zero bytes. Older bootloaders do not set it: zero, or leftover bytes on target 0xFF |
 |  21  | version        | Version of the protocol |
 | 22-23 | versionMajor  | Target 0xFE only: major version of the bootloader. Bit 15 is set if it was built from a modified source tree |
 |  24  | versionMinor   | Target 0xFE only: minor version of the bootloader |
