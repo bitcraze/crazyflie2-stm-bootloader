@@ -42,6 +42,9 @@
 
 #define SYSTEM_BASE 0x1FFF0000
 
+// 96 bit unique device ID of the STM32F4
+#define CPUID_BASE 0x1FFF7A10
+
 #define RADIO_CHANEL 110
 
 #endif /* __CONFIG_H__ */
