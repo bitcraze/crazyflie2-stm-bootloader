@@ -338,7 +338,9 @@ With protocol version 0x11 the same image can be sent to several Crazyflies at t
 To speed up the steps done one Crazyflie at a time, such as the verification or writing data that differs per Crazyflie, SET_CHANNEL can spread the Crazyflies over several channels, each served by its own radio.
 
 ## Contribute
-Go to the [contribute page](https://www.bitcraze.io/contribute/) on our website to learn more.
+Before you open a pull request, please read our [General guidelines for code contributions](https://www.bitcraze.io/development/contribute/general-guidelines/).
+
+For other ways to contribute, see the [contribute page](https://www.bitcraze.io/development/contribute/).
 
 ### Test code for contribution
 Run the automated build locally to test your code
