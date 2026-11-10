@@ -154,7 +154,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
       info->nBuffPages = BUFFER_PAGES;
       info->nFlashPages = flashPages;
       info->flashStart = FLASH_START;
-      //memcpy(info->cpuId, cpuidGetId(), CPUID_LEN);
+      memcpy(info->cpuId, (char*)CPUID_BASE, CPUID_LEN);
       info->version = PROTOCOL_VERSION;
 
       pk->datalen = 2+sizeof(GetInfoReturns_t);
